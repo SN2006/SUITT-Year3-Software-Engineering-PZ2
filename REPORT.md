@@ -1379,3 +1379,160 @@ git commit -m "chore: stabilize public API; forbid any; add package exports"
 npm version major
 git push --follow-tags
 ```
+
+---
+
+## Версія 2.0.0 — breaking change: зміна сигнатури add
+
+1. Зміна сігнатури add у src/utils/add.ts:
+
+```ts
+export function add(values: number[]): number {
+  return values.reduce((acc, x) => acc + x, 0);
+}
+```
+
+2. Оновлення src/demo.ts:
+
+```ts
+import { add, capitalize, formatNumber, Logger, type LogLevel } from './index.js';
+import { config } from './config.js';
+
+console.log('sum(2.0 wrong):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456));
+
+const logger = new Logger(config.LOG_LEVEL as LogLevel);
+
+logger.info('Application started');
+logger.debug('Extra debug info');
+```
+
+3. Виконання перевірки:
+
+```bash
+npm run typecheck
+
+> basic-utils@1.0.0 typecheck
+> tsc --noEmit
+
+src/demo.ts:4:39 - error TS2554: Expected 1 arguments, but got 2.
+
+4 console.log('sum(2.0 wrong):', add(2, 3));
+                                        ~
+
+
+Found 1 error in src/demo.ts:4
+
+npm run lint
+
+> basic-utils@1.0.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\utils\logger.ts
+  4:23  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+npm run format:check
+
+> basic-utils@1.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/utils/add.ts
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+
+```
+
+4. Оновлення src/demo.ts:
+
+```ts
+import { add, capitalize, formatNumber, Logger, type LogLevel } from './index.js';
+import { config } from './config.js';
+
+console.log('sum(2.0 wrong):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456));
+
+const logger = new Logger(config.LOG_LEVEL as LogLevel);
+
+logger.info('Application started');
+logger.debug('Extra debug info');
+```
+
+5. Виконання перевірок:
+
+```bash
+npm run typecheck
+
+> basic-utils@1.0.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@1.0.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\utils\logger.ts
+  4:23  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+npm run format:check
+
+> basic-utils@1.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/utils/add.ts
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@1.0.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\utils\logger.ts
+  4:23  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+> basic-utils@1.0.0 format
+> prettier --write .
+
+.prettierrc.cjs 49ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 21ms (unchanged)
+package-lock.json 88ms (unchanged)
+package.json 10ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 209ms
+src/config.ts 14ms (unchanged)
+src/demo.ts 4ms (unchanged)
+src/index.ts 2ms (unchanged)
+src/types/logLevel.ts 2ms (unchanged)
+src/types/numberFormatOption.ts 2ms (unchanged)
+src/utils/add.ts 3ms
+src/utils/capitalize.ts 2ms (unchanged)
+src/utils/formatNumber.ts 3ms (unchanged)
+src/utils/logger.ts 4ms (unchanged)
+tsconfig.json 4ms (unchanged)
+```
+
+6. Коміт:
+
+```bash
+git add .
+git commit -m 'feat!: change add signature to accept number[]'
+npm version major
+git push --follow-tags
+```
