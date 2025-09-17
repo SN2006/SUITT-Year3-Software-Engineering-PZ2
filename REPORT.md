@@ -1113,3 +1113,269 @@ git commit -m "feat: add Logger class and env config via zod; formatNumber uses 
 npm version minor
 git push --follow-tags
 ```
+
+---
+
+## Версія 1.0.0 — стабілізація публічного API + посилення правил
+
+1. Посилення правил ESLint:
+
+```js
+const js = require('@eslint/js');
+const tseslint = require('typescript-eslint');
+const prettier = require('eslint-config-prettier');
+
+module.exports = [
+  { ignores: ['**/*.cjs', '**/*.md', 'dist/**', 'node_modules/**'] }, // <- тут зміна
+  js.configs.recommended, // базові правила JS
+  ...tseslint.configs.recommended, // базові правила TS
+  prettier, // відключення конфліктів з Prettier
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error', // <- тут зміна
+      'no-unused-vars': 'warn',
+    },
+  },
+];
+```
+
+2. Перерозподіл логіки бібліотеки по окремим файлам:
+
+src/utils/add.ts:
+
+```ts
+export function add(a: number, b: number): number {
+  return a + b;
+}
+```
+
+src/utils/capitalize/ts:
+
+```ts
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+```
+
+src/utils/formatNumber.ts:
+
+```ts
+import { config } from '../config.js';
+import type { NumberFormatOptions } from '../types/numberFormatOption.js';
+
+export function formatNumber(value: number, options?: NumberFormatOptions): string {
+  const precision = options?.precision ?? config.APP_PRECISION;
+  return value.toFixed(precision);
+}
+```
+
+src/utils/logger.ts:
+
+```ts
+import type { LogLevel } from '../types/logLevel.js';
+
+export class Logger {
+  constructor(private level: LogLevel) {}
+
+  info(msg: string): void {
+    if (this.level !== 'silent') {
+      console.log('[INFO]', msg);
+    }
+  }
+
+  debug(msg: string): void {
+    if (this.level === 'debug') {
+      console.log('[DEBUG]', msg);
+    }
+  }
+}
+```
+
+src/types/numberFormatOption.ts:
+
+```ts
+export type NumberFormatOptions = {
+  precision?: number;
+  locale?: string;
+};
+```
+
+src/types/logLevel.ts:
+
+```ts
+export type LogLevel = 'silent' | 'info' | 'debug';
+```
+
+src/index.ts:
+
+```ts
+export { add } from './utils/add.js';
+export { capitalize } from './utils/capitalize.js';
+export { formatNumber } from './utils/formatNumber.js';
+export { Logger } from './utils/logger.js';
+
+export type { NumberFormatOptions } from './types/numberFormatOption.js';
+export type { LogLevel } from './types/logLevel.js';
+```
+
+3. Оновлення package.json:
+
+```json
+{
+  "name": "basic-utils",
+  "version": "0.5.0",
+  "description": "The library that provides useful functions",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "demo": "tsx src/demo.ts",
+    "prepare": "husky"
+  },
+  "author": "Viacheslav Niedieliev",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^24.5.0",
+    "commitlint": "^19.8.1",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.0"
+  }
+}
+```
+
+4. Збірка і перевірка:
+
+```bash
+npm run build
+
+> basic-utils@0.5.0 build
+> tsup src/index.ts --format cjs,esm --dts
+
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.0
+CLI Target: esnext
+CJS Build start
+ESM Build start
+ESM dist\index.js 975.00 B
+ESM ⚡️ Build success in 114ms
+CJS dist\index.cjs 2.66 KB
+CJS ⚡️ Build success in 114ms
+DTS Build start
+DTS ⚡️ Build success in 1150ms
+DTS dist\index.d.cts 541.00 B
+DTS dist\index.d.ts  541.00 B
+
+npm run typecheck
+
+> basic-utils@0.5.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.5.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\utils\logger.ts
+  4:25  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+npm run format:check
+
+> basic-utils@0.5.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/index.ts
+[warn] src/types/logLevel.ts
+[warn] src/types/numberFormatOption.ts
+[warn] src/utils/add.ts
+[warn] src/utils/capitalize.ts
+[warn] src/utils/formatNumber.ts
+[warn] src/utils/logger.ts
+[warn] Code style issues found in 8 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.5.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\utils\logger.ts
+  4:25  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+> basic-utils@0.5.0 format
+> prettier --write .
+
+.prettierrc.cjs 40ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 13ms (unchanged)
+package-lock.json 77ms (unchanged)
+package.json 10ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 200ms
+src/config.ts 14ms (unchanged)
+src/demo.ts 3ms (unchanged)
+src/index.ts 2ms
+src/types/logLevel.ts 2ms
+src/types/numberFormatOption.ts 2ms
+src/utils/add.ts 2ms
+src/utils/capitalize.ts 2ms
+src/utils/formatNumber.ts 3ms
+src/utils/logger.ts 3ms
+tsconfig.json 4ms (unchanged)
+
+```
+
+5. Коміт:
+
+```bash
+git add .
+git commit -m "chore: stabilize public API; forbid any; add package exports"
+npm version major
+git push --follow-tags
+```
