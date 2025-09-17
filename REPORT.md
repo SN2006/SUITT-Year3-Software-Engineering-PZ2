@@ -726,3 +726,174 @@ git commit -m "feat: add formatNumber with NumberFormatOptions"
 npm version minor
 git push --follow-tags
 ```
+
+---
+
+## Версія 0.4.0 — інтерфейси + generics
+
+1. Оновлюємо src/index.ts
+
+```ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export type NumberFormatOptions = {
+  precision?: number;
+  locale?: string;
+};
+
+export function formatNumber(value: number, options?: NumberFormatOptions): string {
+  const precision = options?.precision ?? Number(process.env.APP_PRECISION ?? 2);
+
+  return value.toFixed(precision);
+}
+
+export interface User {
+  id: number;
+  name: string;
+}
+
+export function groupBy<T>(arr: T[], key: keyof T): Record<string, T[]> {
+  return arr.reduce(
+    (acc, item) => {
+      const group = String(item[key]);
+      acc[group] = acc[group] ?? [];
+      acc[group].push(item);
+      return acc;
+    },
+    {} as Record<string, T[]>,
+  );
+}
+```
+
+2. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize, formatNumber, type User, groupBy } from './index.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456, { precision: 2 }));
+
+const users: User[] = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+];
+
+console.log('group wrong:', groupBy(users, 'age'));
+```
+
+3. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.3.0 typecheck
+> tsc --noEmit
+
+src/demo.ts:13:44 - error TS2345: Argument of type '"age"' is not assignable to parameter of type 'keyof User'.
+
+13 console.log('group wrong:', groupBy(users, 'age'));
+                                              ~~~~~
+
+
+Found 1 error in src/demo.ts:13
+
+npm run lint
+
+> basic-utils@0.3.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.3.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+```
+
+4. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize, formatNumber, type User, groupBy } from './index.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456, { precision: 2 }));
+
+const users: User[] = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+];
+
+console.log('group ok:', groupBy(users, 'name'));
+```
+
+5. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.3.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.3.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.3.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.3.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+> basic-utils@0.3.0 format
+> prettier --write .
+
+.prettierrc.cjs 43ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 13ms (unchanged)
+package-lock.json 75ms (unchanged)
+package.json 10ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 156ms
+src/demo.ts 16ms
+src/index.ts 10ms
+tsconfig.json 5ms (unchanged)
+```
+
+6. Коміт
+
+```bash
+git add .
+git commit -m "feat: add User interface and generic groupBy"
+npm version minor
+git push --follow-tags
+```
