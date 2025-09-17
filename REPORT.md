@@ -897,3 +897,219 @@ git commit -m "feat: add User interface and generic groupBy"
 npm version minor
 git push --follow-tags
 ```
+
+---
+
+## Версія 0.5.0 — клас Logger + змінні оточення (.env)
+
+1. Створення файла src/config.ts
+
+```ts
+import * as dotenv from 'dotenv';
+import { z } from 'zod';
+
+dotenv.config();
+
+const schema = z.object({
+  APP_PRECISION: z.coerce.number().int().min(0).max(10).default(2),
+  LOG_LEVEL: z.enum(['silent', 'info', 'debug']).default('info'),
+});
+
+export const config = schema.parse(process.env);
+export type Config = z.infer<typeof schema>;
+```
+
+2. Оновлення scr/index.ts:
+
+```ts
+import { config } from './config.js';
+
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export type NumberFormatOptions = {
+  precision?: number;
+  locale?: string;
+};
+
+export function formatNumber(value: number, options?: NumberFormatOptions): string {
+  const precision = options?.precision ?? config.APP_PRECISION;
+  return value.toFixed(precision);
+}
+
+export type LogLevel = 'silent' | 'info' | 'debug';
+export class Logger {
+  constructor(private level: LogLevel) {}
+
+  info(msg: string): void {
+    if (this.level !== 'silent') {
+      console.log('[INFO]', msg);
+    }
+  }
+
+  debug(msg: string): void {
+    if (this.level === 'debug') {
+      console.log('[DEBUG]', msg);
+    }
+  }
+}
+```
+
+3. Створення .env:
+
+```.env
+APP_PRECISION=3
+LOG_LEVEL=debug
+```
+
+4. Оновлення src/demo.ts:
+
+```ts
+import { add, capitalize, formatNumber, Logger, type LogLevel } from './index.js';
+import { config } from './config.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456));
+
+const bad = new Logger('verbose');
+bad.info('This should not compile');
+```
+
+5. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.4.0 typecheck
+> tsc --noEmit
+
+src/demo.ts:9:24 - error TS2345: Argument of type '"verbose"' is not assignable to parameter of type 'LogLevel'.
+
+9 const bad = new Logger('verbose');
+                         ~~~~~~~~~
+
+
+Found 1 error in src/demo.ts:9
+
+npm run lint
+
+> basic-utils@0.4.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\demo.ts
+  1:54  warning  'LogLevel' is defined but never used  no-unused-vars
+  1:54  error    'LogLevel' is defined but never used  @typescript-eslint/no-unused-vars
+  2:10  warning  'config' is defined but never used    no-unused-vars
+  2:10  error    'config' is defined but never used    @typescript-eslint/no-unused-vars
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  23:25  warning  'level' is defined but never used  no-unused-vars
+
+✖ 5 problems (2 errors, 3 warnings)
+
+npm run format:check
+
+> basic-utils@0.4.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/config.ts
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 4 files. Run Prettier with --write to fix.
+
+```
+
+6. Оновлення src/demo.ts:
+
+```ts
+import { add, capitalize, formatNumber, Logger, type LogLevel } from './index.js';
+import { config } from './config.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456));
+
+const logger = new Logger(config.LOG_LEVEL as LogLevel);
+
+logger.info('Application started');
+logger.debug('Extra debug info');
+```
+
+7. Виконання перевірок:
+
+```bash
+npm run typecheck
+
+> basic-utils@0.4.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.4.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  23:25  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+npm run format:check
+
+> basic-utils@0.4.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/config.ts
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 4 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.4.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  23:25  warning  'level' is defined but never used  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+> basic-utils@0.4.0 format
+> prettier --write .
+
+.prettierrc.cjs 41ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 14ms (unchanged)
+package-lock.json 81ms (unchanged)
+package.json 11ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 172ms
+src/config.ts 15ms
+src/demo.ts 14ms
+src/index.ts 5ms
+tsconfig.json 3ms (unchanged)
+```
+
+8. Коміт
+
+```bash
+git add .
+git commit -m "feat: add Logger class and env config via zod; formatNumber uses APP_PRECISION"
+npm version minor
+git push --follow-tags
+```
