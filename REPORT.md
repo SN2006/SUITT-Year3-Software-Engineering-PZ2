@@ -585,3 +585,144 @@ git commit -m "feat: add basic types for utils (number/string)"
 npm version minor
 git push --follow-tags
 ```
+
+---
+
+## Версія 0.3.0 — нова функція зі складним типом
+
+1. Оновлюємо src/index.ts
+
+```ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export type NumberFormatOptions = {
+  precision?: number;
+  locale?: string;
+};
+
+export function formatNumber(value: number, options?: NumberFormatOptions): string {
+  const precision = options?.precision ?? Number(process.env.APP_PRECISION ?? 2);
+
+  return value.toFixed(precision);
+}
+```
+
+2. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize, formatNumber } from './index.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(bad):', formatNumber('abc', { precision: 2 }));
+```
+
+3. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.2.0 typecheck
+> tsc --noEmit
+
+src/demo.ts:6:42 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+
+6 console.log('format(bad):', formatNumber('abc', { precision: 2 }));
+                                           ~~~~~
+
+
+Found 1 error in src/demo.ts:6
+
+npm run lint
+
+> basic-utils@0.2.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.2.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+```
+
+4. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize, formatNumber } from './index.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+
+console.log('format(ok):', formatNumber(123.456, { precision: 2 }));
+```
+
+5. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.2.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.2.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.2.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.2.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+> basic-utils@0.2.0 format
+> prettier --write .
+
+.prettierrc.cjs 42ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 13ms (unchanged)
+package-lock.json 70ms (unchanged)
+package.json 11ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 128ms
+src/demo.ts 13ms
+src/index.ts 6ms
+tsconfig.json 5ms (unchanged)
+
+```
+
+6. Коміт
+
+```bash
+git add .
+git commit -m "feat: add formatNumber with NumberFormatOptions"
+npm version minor
+git push --follow-tags
+```
