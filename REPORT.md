@@ -455,3 +455,133 @@ git commit -m "feat: basic utils with any (add, capitalize)"
 npm version minor
 git push --follow-tags
 ```
+
+---
+
+## Версія 0.2.0 — ті ж функції, але з базовими типами
+
+1. Оновлюємо src/index.ts
+
+```ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+```
+
+2. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize } from './index.js';
+
+console.log('sum(typed):', add('2', 3));
+
+console.log('capitalize(typed):', capitalize(123));
+```
+
+3. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.1.0 typecheck
+> tsc --noEmit
+
+src/demo.ts:3:32 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+
+3 console.log('sum(typed):', add('2', 3));
+                                 ~~~
+
+src/demo.ts:5:46 - error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+
+5 console.log('capitalize(typed):', capitalize(123));
+                                               ~~~
+
+
+Found 2 errors in the same file, starting at: src/demo.ts:3
+
+npm run lint
+
+> basic-utils@0.1.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+```
+
+4. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize } from './index.js';
+
+console.log('sum(typed):', add(2, 3));
+console.log('capitalize(typed):', capitalize('hello'));
+```
+
+5. Виконання перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.1.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.1.0 lint
+> eslint . --ext .ts
+
+npm run format:check
+
+> basic-utils@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.1.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+> basic-utils@0.1.0 format
+> prettier --write .
+
+.prettierrc.cjs 42ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 14ms (unchanged)
+package-lock.json 74ms (unchanged)
+package.json 11ms (unchanged)
+README.md 24ms (unchanged)
+REPORT.md 112ms
+src/demo.ts 12ms
+src/index.ts 4ms
+tsconfig.json 4ms (unchanged)
+```
+
+6. Коміт
+
+```bash
+git add .
+git commit -m "feat: add basic types for utils (number/string)"
+npm version minor
+git push --follow-tags
+```
