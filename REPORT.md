@@ -272,6 +272,186 @@ husky - pre-commit script failed (code 1)
 
 ```json
 {
-  "ignores": ["**/*.cjs", "REPORT.md"]
+  "ignores": ["**/*.cjs", "**/*.md"]
 }
+```
+
+```bash
+git add .
+warning: in the working copy of 'REPORT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'eslint.config.cjs', LF will be replaced by CRLF the next time Git touches it
+
+git commit -m "chore: project scaffolding (npm, tsconfig, eslint, prettier, husky, commitlint, scripts)"
+
+> basic-utils@0.0.0 lint
+> eslint . --ext .ts
+
+
+> basic-utils@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> basic-utils@0.0.0 typecheck
+> tsc --noEmit
+
+[main dc27df3] chore: project scaffolding (npm, tsconfig, eslint, prettier, husky, commitlint, scripts)
+ 13 files changed, 4745 insertions(+), 1 deletion(-)
+ create mode 100644 .gitignore
+ create mode 100644 .husky/commit-msg
+ create mode 100644 .husky/pre-commit
+ create mode 100644 .prettierrc.cjs
+ create mode 100644 REPORT.md
+ create mode 100644 commitlint.config.cjs
+ create mode 100644 eslint.config.cjs
+ create mode 100644 images/img1.png
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 src/index.ts
+ create mode 100644 tsconfig.json
+```
+
+---
+
+## Версія 0.1.0 — прості функції з any
+
+1. Оновлюємо src/index.ts
+
+```ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+export function add(a: any, b: any) {
+  return a + b;
+}
+
+export function capitalize(s: any) {
+  return String(s).charAt(0).toUpperCase() + String(s).slice(1);
+}
+```
+
+2. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize } from './index.js';
+
+console.log('sum(any):', add(2, 3));
+
+const unused = 42;
+
+console.log('capitalize(any):', capitalize('hello'));
+```
+
+3. Запуск перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.0.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\demo.ts
+  5:7  warning  'unused' is assigned a value but never used  no-unused-vars
+  5:7  error    'unused' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  4:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  4:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  8:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 5 problems (1 error, 4 warnings)
+
+npm run format:check
+
+> basic-utils@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+```
+
+4. Оновлюємо src/demo.ts
+
+```ts
+import { add, capitalize } from './index.js';
+
+console.log('sum(any):', add(2, 3));
+
+console.log('capitalize(any):', capitalize('hello'));
+```
+
+5. Запуск перевірок
+
+```bash
+npm run typecheck
+
+> basic-utils@0.0.0 typecheck
+> tsc --noEmit
+
+npm run lint
+
+> basic-utils@0.0.0 lint
+> eslint . --ext .ts
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  4:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  4:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  8:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 3 problems (0 errors, 3 warnings)
+
+npm run format:check
+
+> basic-utils@0.0.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] REPORT.md
+[warn] src/demo.ts
+[warn] src/index.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.
+
+npm run lint:fix && npm run format
+
+> basic-utils@0.0.0 lint:fix
+> eslint . --ext .ts --fix
+
+
+D:\study\course3\software_engeneering\SUITT-Year3-Software-Engineering-PZ2\src\index.ts
+  4:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  4:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  8:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 3 problems (0 errors, 3 warnings)
+
+
+> basic-utils@0.0.0 format
+> prettier --write .
+
+.prettierrc.cjs 43ms (unchanged)
+commitlint.config.cjs 3ms (unchanged)
+eslint.config.cjs 13ms (unchanged)
+package-lock.json 70ms (unchanged)
+package.json 11ms (unchanged)
+README.md 23ms (unchanged)
+REPORT.md 95ms
+src/demo.ts 13ms
+src/index.ts 4ms
+tsconfig.json 4ms (unchanged)
+```
+
+6. Коміт
+
+```bash
+git add .
+git commit -m "feat: basic utils with any (add, capitalize)"
+npm version minor
+git push --follow-tags
 ```

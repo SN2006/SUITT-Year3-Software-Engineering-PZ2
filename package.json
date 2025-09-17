@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "The library that provides useful functions",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "lint": "eslint . --ext .ts",
